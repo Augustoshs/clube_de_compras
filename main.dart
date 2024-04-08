@@ -1,13 +1,24 @@
+import 'dart:io';
+
+class Cartao {
+  String numero;
+  String tipo;
+
+  Cartao(this.numero, this.tipo);
+}
+
 class Usuario {
   int id;
   String username;
   String email;
   String _senha;
   String telefone;
+  List<Cartao> cartoes = [];
 
   Usuario(this.id, this.username, this.email, this._senha, this.telefone);
 
-  Usuario.criarConta(String username, String email, String senha, String telefone)
+  Usuario.criarConta(
+      String username, String email, String senha, String telefone)
       : this(0, username, email, senha, telefone);
 
   void listarUsuario() {
@@ -16,6 +27,7 @@ class Usuario {
     print('Nome de Usuário: $username');
     print('Email: $email');
     print('Telefone: $telefone');
+    print('Número de Cartões: ${cartoes.length}');
   }
 
   void trocarSenha(String novaSenha) {
@@ -23,65 +35,178 @@ class Usuario {
     print('Senha alterada com sucesso!');
   }
 
-  void fazerLogin(String senha) {
-    if (_senha == senha) {
-      print('Login efetuado com sucesso!');
+  bool fazerLogin(String senha) {
+    if (senha == _senha) {
+      print('Bem-vindo, $username!');
+      return true;
     } else {
       print('Senha incorreta!');
+      return false;
     }
   }
 
-  void excluirConta() { print('Conta excluída com sucesso!'); }
+  void adicionarCartao(String numero, String tipo) {
+    Cartao novoCartao = Cartao(numero, tipo);
+    cartoes.add(novoCartao);
+    print('Cartão adicionado com sucesso!');
+  }
+
+  void excluirConta() {
+    print('Conta excluída com sucesso!');
+  }
+}
+
+class UsuarioEmpresa extends Usuario {
+  String cnpj;
+  String razaoSocial;
+
+  UsuarioEmpresa(int id, String username, String email, String senha,
+      String telefone, this.cnpj, this.razaoSocial)
+      : super(id, username, email, senha, telefone);
+
+  UsuarioEmpresa.criarContaEmpresa(String username, String email, String senha,
+      String telefone, String cnpj, String razaoSocial)
+      : this(0, username, email, senha, telefone, cnpj, razaoSocial);
 }
 
 class Admin {
-  int idAdmin;
-  String setor;
+  var AdminList = [
+    'augusto@gmail.com'
+  ];
 
-  Admin(this.idAdmin, this.setor);
-
-  void listarAdmin() {
-    print('Admin:');
-    print('ID: $idAdmin');
-    print('Setor: $setor');
+  void verificarAdmin(String email) {
+    if (AdminList.contains(email)) {
+      print('Bem-vindo, $email!');
+    } else {
+      print('Usuário não é um administrador.');
+    }
   }
 }
 
 void main() {
-  print("--------------------");
+  List<Usuario> usuarios = [
+    Usuario(1, 'augusto', 'augusto@gmail.com', '123456', '123456789'),
+  ];
 
-  var usuario = Usuario();
+  bool sair = false;
 
-  usuario.criarConta("Augusto", "augusto@gmail.com", "123456", "999999999");
-  usuario.listarUsuarios();
+  while (!sair) {
+    exibirMenu();
+    String? opcao = stdin.readLineSync();
 
-  usuario.trocarSenha("Augusto", "123456");
+    switch (opcao) {
+      case '1':
+        fazerLogin(usuarios);
+        break;
 
-  usuario.fazerLogin("Augusto", "123456");
+      case '2':
+        criarConta(usuarios);
+        break;
 
-  usuario.excluirConta("Augusto");
+      case '3':
+        sair = true;
+        print('Saindo...');
+        break;
 
-  print("--------------------");
+      default:
+        print('Opção inválida. Tente novamente.');
+        break;
+    }
+  }
+}
 
-  var admin = Admin();
-  admin.alterarInfo(1, "TI");
-  admin.listarAdmins();
+void exibirMenu() {
+  print('Menu:');
+  print('1. Login');
+  print('2. Criar Conta');
+  print('3. Sair');
+  stdout.write('Escolha uma opção: ');
+}
 
-  print("--------------------");
+void fazerLogin(List<Usuario> usuarios) {
+  print('Faça login');
+  stdout.write('Email: ');
+  String? email = stdin.readLineSync();
+  stdout.write('Senha: ');
+  String? senha = stdin.readLineSync();
 
-  var cartao = Cartao();
-  cartao.criarCartao("Cartão de Crédito");
-  cartao.listarCartoes();
-  cartao.alterarImagem();
-  cartao.deletarCartao(1);
-  cartao.editarCartao(1, "Cartão de Débito");
-  cartao.gerarQRCode();
+  bool loginSucesso = false;
 
-  print("--------------------");
+  Admin admin = Admin();
+  admin.verificarAdmin(email!);
 
-  var empresa = Empresa();
-  empresa.criarConta("Empresa X", "9999999");
-  empresa.listarEmpresas();
-  empresa.alterarInfoEmpresa("Empresa Y", "999998");
-  empresa.listarEmpresas();
+  for (var usuario in usuarios) {
+    if (usuario.email == email) {
+      loginSucesso = usuario.fazerLogin(senha!);
+      if (loginSucesso) {
+        while (loginSucesso) {
+          print('Número de Cartões: ${usuario.cartoes.length}');
+          print('Deseja adicionar um novo cartão? (S/N)');
+          String? adicionarCartao = stdin.readLineSync();
+          if (adicionarCartao?.toUpperCase() == 'S') {
+            stdout.write('Número do Cartão: ');
+            String? numeroCartao = stdin.readLineSync();
+            stdout.write('Tipo do Cartão: ');
+            String? tipoCartao = stdin.readLineSync();
+            usuario.adicionarCartao(numeroCartao!, tipoCartao!);
+          }
+          break;
+        }
+      }
+      break;
+    }
+  }
+  if (!loginSucesso) {
+    print('Usuário não encontrado ou senha incorreta.');
+  }
+}
+
+void criarConta(List<Usuario> usuarios) {
+  print('Criar Conta');
+  print('1. Usuário Padrão');
+  print('2. Empresa');
+  stdout.write('Escolha o tipo de conta a ser criada: ');
+  String? tipoConta = stdin.readLineSync();
+
+  switch (tipoConta) {
+    case '1':
+      stdout.write('Nome de Usuário: ');
+      String? username = stdin.readLineSync();
+      stdout.write('Email: ');
+      String? email = stdin.readLineSync();
+      stdout.write('Senha: ');
+      String? senha = stdin.readLineSync();
+      stdout.write('Telefone: ');
+      String? telefone = stdin.readLineSync();
+
+      Usuario novoUsuario =
+          Usuario.criarConta(username!, email!, senha!, telefone!);
+      usuarios.add(novoUsuario);
+      print('Conta de Usuário Padrão criada com sucesso!');
+      break;
+
+    case '2':
+      stdout.write('Nome de Usuário: ');
+      String? username = stdin.readLineSync();
+      stdout.write('Email: ');
+      String? email = stdin.readLineSync();
+      stdout.write('Senha: ');
+      String? senha = stdin.readLineSync();
+      stdout.write('Telefone: ');
+      String? telefone = stdin.readLineSync();
+      stdout.write('CNPJ: ');
+      String? cnpj = stdin.readLineSync();
+      stdout.write('Razão Social: ');
+      String? razaoSocial = stdin.readLineSync();
+
+      UsuarioEmpresa novoUsuarioEmpresa = UsuarioEmpresa.criarContaEmpresa(
+          username!, email!, senha!, telefone!, cnpj!, razaoSocial!);
+      usuarios.add(novoUsuarioEmpresa);
+      print('Conta de Empresa criada com sucesso!');
+      break;
+
+    default:
+      print('Opção inválida. Tente novamente.');
+      break;
+  }
 }
